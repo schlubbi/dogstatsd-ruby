@@ -2,6 +2,12 @@
 
 [//]: # (comment: Don't forget to update lib/datadog/statsd/version.rb:DogStatsd::Statsd::VERSION when releasing a new version)
 
+## 5.6.2 / 2024.09.20
+
+  * [OTHER] Ruby versions 3.2 and 3.3 are now supported. [#291][] by [@gdubicki][]
+  * [IMPROVEMENT] Reduce memory allocations during tag and metric serialization. [#294][] by [@schlubbi][]
+  * [IMPROVEMENT] Avoid allocations when using delay_serialization. [#295][] by [@jhawthorn][]
+
 ## 5.6.1 / 2023.09.07
 
   * [IMPROVEMENT] Add support for IPv6 UDP connection. [#280][] by [@kazwolfe][]
@@ -464,6 +470,9 @@ Future versions are likely to introduce backward incompatibilities with < Ruby 1
 [#272]: https://github.com/DataDog/dogstatsd-ruby/issues/272
 [#278]: https://github.com/DataDog/dogstatsd-ruby/issues/278
 [#280]: https://github.com/DataDog/dogstatsd-ruby/issues/280
+[#291]: https://github.com/DataDog/dogstatsd-ruby/issues/291
+[#294]: https://github.com/DataDog/dogstatsd-ruby/issues/294
+[#295]: https://github.com/DataDog/dogstatsd-ruby/issues/295
 [@AMekss]: https://github.com/AMekss
 [@abicky]: https://github.com/abicky
 [@adimitrov]: https://github.com/adimitrov
@@ -476,12 +485,14 @@ Future versions are likely to introduce backward incompatibilities with < Ruby 1
 [@djpate]: https://github.com/djpate
 [@f3ndot]: https://github.com/f3ndot
 [@fimmtiu]: https://github.com/fimmtiu
+[@gdubicki]: https://github.com/gdubicki
 [@gleseur]: https://github.com/gleseur
 [@grosser]: https://github.com/grosser
 [@hush-hush]: https://github.com/hush-hush
 [@ivoanjo]: https://github.com/ivoanjo
 [@jacobbednarz]: https://github.com/jacobbednarz
 [@janester]: https://github.com/janester
+[@jhawthorn]: https://github.com/jhawthorn
 [@jordan-brough]: https://github.com/jordan-brough
 [@jtzemp]: https://github.com/jtzemp
 [@kazu9su]: https://github.com/kazu9su
@@ -497,6 +508,7 @@ Future versions are likely to introduce backward incompatibilities with < Ruby 1
 [@ramfjord]: https://github.com/ramfjord
 [@redhotpenguin]: https://github.com/redhotpenguin
 [@remeh]: https://github.com/remeh
+[@schlubbi]: https://github.com/schlubbi
 [@sensadrome]: https://github.com/sensadrome
 [@sj26]: https://github.com/sj26
 [@sullerandras]: https://github.com/sullerandras
