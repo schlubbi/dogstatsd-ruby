@@ -37,6 +37,14 @@ module Datadog
           container_id,
           external_data
         ).format(cardinality)
+
+        # Pre-compute zero-value telemetry strings to avoid sprintf per flush
+        # Each counter gets its own value cache: { value => frozen_string }
+        @value_caches = TELEMETRY_COUNTER_NAMES.map { |name|
+          cache = {}
+          cache[0] = sprintf(pattern, name, 0).freeze
+          cache
+        }
       end
 
       def would_fit_in?(max_buffer_payload_size)
@@ -85,19 +93,36 @@ module Datadog
         @next_flush_time < now_in_s
       end
 
+      TELEMETRY_COUNTER_NAMES = [
+        'metrics',
+        'events',
+        'service_checks',
+        'bytes_sent',
+        'bytes_dropped',
+        'bytes_dropped_queue',
+        'bytes_dropped_writer',
+        'packets_sent',
+        'packets_dropped',
+        'packets_dropped_queue',
+        'packets_dropped_writer',
+      ].freeze
+
       def flush
+        # Return a new array each call for thread safety — callers may
+        # iterate the result while another thread triggers a new flush.
+        # The strings themselves are cached/frozen so no new string allocs.
         [
-          sprintf(pattern, 'metrics', @metrics),
-          sprintf(pattern, 'events', @events),
-          sprintf(pattern, 'service_checks', @service_checks),
-          sprintf(pattern, 'bytes_sent', @bytes_sent),
-          sprintf(pattern, 'bytes_dropped', @bytes_dropped),
-          sprintf(pattern, 'bytes_dropped_queue', @bytes_dropped_queue),
-          sprintf(pattern, 'bytes_dropped_writer', @bytes_dropped_writer),
-          sprintf(pattern, 'packets_sent', @packets_sent),
-          sprintf(pattern, 'packets_dropped', @packets_dropped),
-          sprintf(pattern, 'packets_dropped_queue', @packets_dropped_queue),
-          sprintf(pattern, 'packets_dropped_writer', @packets_dropped_writer),
+          telemetry_format(0, @metrics),
+          telemetry_format(1, @events),
+          telemetry_format(2, @service_checks),
+          telemetry_format(3, @bytes_sent),
+          telemetry_format(4, @bytes_dropped),
+          telemetry_format(5, @bytes_dropped_queue),
+          telemetry_format(6, @bytes_dropped_writer),
+          telemetry_format(7, @packets_sent),
+          telemetry_format(8, @packets_dropped),
+          telemetry_format(9, @packets_dropped_queue),
+          telemetry_format(10, @packets_dropped_writer),
         ]
       end
 
@@ -107,6 +132,16 @@ module Datadog
 
       def pattern
         @pattern ||= "datadog.dogstatsd.client.%s:%d|#{COUNTER_TYPE}|##{serialized_tags}#{serialized_fields}"
+      end
+
+      def telemetry_format(index, value)
+        cache = @value_caches[index]
+        if cached = cache[value]
+          return cached
+        end
+        result = sprintf(pattern, TELEMETRY_COUNTER_NAMES[index], value).freeze
+        cache[value] = result if cache.size < 32
+        result
       end
 
       if Kernel.const_defined?('Process') && Process.respond_to?(:clock_gettime)
