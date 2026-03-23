@@ -186,10 +186,16 @@ module Datadog
     # @option opts [Numeric] :by increment value, default 1
     # @option opts [String] :cardinality The tag cardinality to use
     # @see #count
-    def increment(stat, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      incr_value = opts.fetch(:by, 1)
-      count(stat, incr_value, opts)
+    def increment(stat, opts = nil, tags: nil, sample_rate: nil, by: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+        by ||= opts[:by]
+      end
+      send_stats(stat, by || 1, COUNTER_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Sends a decrement (count = -1) for the given stat to the statsd server.
@@ -202,10 +208,16 @@ module Datadog
     # @option opts [Numeric] :by decrement value, default 1
     # @option opts [String] :cardinality The tag cardinality to use
     # @see #count
-    def decrement(stat, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      decr_value = - opts.fetch(:by, 1)
-      count(stat, decr_value, opts)
+    def decrement(stat, opts = nil, tags: nil, sample_rate: nil, by: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+        by ||= opts[:by]
+      end
+      send_stats(stat, -(by || 1), COUNTER_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Sends an arbitrary count for the given stat to the statsd server.
@@ -217,9 +229,15 @@ module Datadog
     # @option opts [Boolean] :pre_sampled If true, the client assumes the caller has already sampled metrics at :sample_rate, and doesn't perform sampling.
     # @option opts [Array<String>] :tags An array of tags
     # @option opts [String] :cardinality The tag cardinality to use
-    def count(stat, count, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      send_stats(stat, count, COUNTER_TYPE, opts)
+    def count(stat, count, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, count, COUNTER_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Sends an arbitrary gauge value for the given stat to the statsd server.
@@ -237,9 +255,15 @@ module Datadog
     # @option opts [String] :cardinality The tag cardinality to use
     # @example Report the current user count:
     #   $statsd.gauge('user.count', User.count)
-    def gauge(stat, value, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      send_stats(stat, value, GAUGE_TYPE, opts)
+    def gauge(stat, value, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, value, GAUGE_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Sends a value to be tracked as a histogram to the statsd server.
@@ -253,8 +277,14 @@ module Datadog
     # @option opts [String] :cardinality The tag cardinality to use
     # @example Report the current user count:
     #   $statsd.histogram('user.count', User.count)
-    def histogram(stat, value, opts = EMPTY_OPTIONS)
-      send_stats(stat, value, HISTOGRAM_TYPE, opts)
+    def histogram(stat, value, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, value, HISTOGRAM_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Sends a value to be tracked as a distribution to the statsd server.
@@ -268,8 +298,14 @@ module Datadog
     # @option opts [String] :cardinality The tag cardinality to use
     # @example Report the current user count:
     #   $statsd.distribution('user.count', User.count)
-    def distribution(stat, value, opts = EMPTY_OPTIONS)
-      send_stats(stat, value, DISTRIBUTION_TYPE, opts)
+    def distribution(stat, value, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, value, DISTRIBUTION_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Reports execution time of the provided block as a distribution.
@@ -285,12 +321,18 @@ module Datadog
     # @option opts [String] :cardinality The tag cardinality to use
     # @example Report the time (in ms) taken to activate an account
     #   $statsd.distribution_time('account.activate') { @account.activate! }
-    def distribution_time(stat, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
+    def distribution_time(stat, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
       start = now
       yield
     ensure
-      distribution(stat, ((now - start) * 1000).round, opts)
+      distribution(stat, ((now - start) * 1000).round, tags: tags, sample_rate: sample_rate, pre_sampled: pre_sampled, cardinality: cardinality)
     end
 
     # Sends a timing (in ms) for the given stat to the statsd server. The
@@ -305,9 +347,15 @@ module Datadog
     # @option opts [Boolean] :pre_sampled If true, the client assumes the caller has already sampled metrics at :sample_rate, and doesn't perform sampling.
     # @option opts [Array<String>] :tags An array of tags
     # @option opts [String] :cardinality The tag cardinality to use
-    def timing(stat, ms, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      send_stats(stat, ms, TIMING_TYPE, opts)
+    def timing(stat, ms, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, ms, TIMING_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # Reports execution time of the provided block using {#timing}.
@@ -325,12 +373,18 @@ module Datadog
     # @see #timing
     # @example Report the time (in ms) taken to activate an account
     #   $statsd.time('account.activate') { @account.activate! }
-    def time(stat, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
+    def time(stat, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
       start = now
       yield
     ensure
-      timing(stat, ((now - start) * 1000).round, opts)
+      timing(stat, ((now - start) * 1000).round, tags: tags, sample_rate: sample_rate, pre_sampled: pre_sampled, cardinality: cardinality)
     end
 
     # Sends a value to be tracked as a set to the statsd server.
@@ -344,9 +398,15 @@ module Datadog
     # @option opts [String] :cardinality The tag cardinality to use
     # @example Record a unique visitory by id:
     #   $statsd.set('visitors.uniques', User.id)
-    def set(stat, value, opts = EMPTY_OPTIONS)
-      opts = { sample_rate: opts } if opts.is_a?(Numeric)
-      send_stats(stat, value, SET_TYPE, opts)
+    def set(stat, value, opts = nil, tags: nil, sample_rate: nil, pre_sampled: nil, cardinality: nil)
+      if opts
+        opts = { sample_rate: opts } if opts.is_a?(Numeric)
+        tags ||= opts[:tags]
+        sample_rate ||= opts[:sample_rate]
+        pre_sampled ||= opts[:pre_sampled]
+        cardinality ||= opts[:cardinality]
+      end
+      send_stats(stat, value, SET_TYPE, tags, sample_rate, pre_sampled, cardinality)
     end
 
     # This method allows you to send custom service check statuses.
@@ -459,18 +519,18 @@ module Datadog
       Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
-    def send_stats(stat, delta, type, opts = EMPTY_OPTIONS)
+    def send_stats(stat, delta, type, tags = nil, sample_rate_arg = nil, pre_sampled = nil, cardinality_arg = nil)
       telemetry.sent(metrics: 1) if telemetry
 
-      sample_rate = opts[:sample_rate] || @sample_rate || 1
-      cardinality = opts[:cardinality] || @cardinality
+      sample_rate = sample_rate_arg || @sample_rate || 1
+      cardinality = cardinality_arg || @cardinality
 
-      if sample_rate == 1 || opts[:pre_sampled] || rand <= sample_rate
+      if sample_rate == 1 || pre_sampled || rand <= sample_rate
         full_stat =
           if @delay_serialization
-            [stat, delta, type, opts[:tags], sample_rate, cardinality]
+            [stat, delta, type, tags, sample_rate, cardinality]
           else
-            serializer.to_stat(stat, delta, type, tags: opts[:tags], sample_rate: sample_rate, cardinality: cardinality)
+            serializer.to_stat(stat, delta, type, tags: tags, sample_rate: sample_rate, cardinality: cardinality)
           end
 
         forwarder.send_message(full_stat)
