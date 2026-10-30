@@ -56,40 +56,4 @@ describe Datadog::Statsd::Serialization::FieldSerializer do
       expect { serializer.format(:low) }.to make_allocations(1)
     end
   end
-
-  context 'benchmark' do
-    before { skip("Benchmarks results are currently not used by CI") if ENV.key?('CI') }
-
-    def benchmark_setup(benchmark)
-      empty = described_class.new(nil, nil)
-      container = described_class.new('a' * 64, nil)
-      external = described_class.new(nil, 'it-false,cn-container,pu-pod')
-      both = described_class.new('a' * 64, 'it-false,cn-container,pu-pod')
-
-      benchmark.report('no origin') { empty.format(nil) }
-      benchmark.report('container') { container.format(nil) }
-      benchmark.report('external') { external.format(nil) }
-      benchmark.report('both') { both.format(nil) }
-      benchmark.report('cardinality') { empty.format(:low) }
-      benchmark.report('both + cardinality') { both.format(:low) }
-    end
-
-    it 'measure IPS' do
-      require 'benchmark/ips'
-
-      Benchmark.ips do |x|
-        benchmark_setup(x)
-        x.compare!
-      end
-    end
-
-    it 'measure memory' do
-      require 'benchmark-memory'
-
-      Benchmark.memory do |x|
-        benchmark_setup(x)
-        x.compare!
-      end
-    end
-  end
 end
