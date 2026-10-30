@@ -13,14 +13,26 @@ module Datadog
           @origin_fields.freeze
         end
 
-        def format(cardinality)
-          return @origin_fields if cardinality.nil?
+        if RUBY_VERSION < '3'
+          def format(cardinality)
+            return @origin_fields if cardinality.nil?
 
-          unless VALID_CARDINALITY.include?(cardinality.to_sym)
-            raise ArgumentError, "Invalid cardinality #{cardinality}. Valid options are #{VALID_CARDINALITY.join(', ')}."
+            unless VALID_CARDINALITY.include?(cardinality.to_sym)
+              raise ArgumentError, "Invalid cardinality #{cardinality}. Valid options are #{VALID_CARDINALITY.join(', ')}."
+            end
+
+            @origin_fields + "|card:#{cardinality}"
           end
+        else
+          def format(cardinality)
+            return @origin_fields if cardinality.nil?
 
-          "#{@origin_fields}|card:#{cardinality}"
+            unless VALID_CARDINALITY.include?(cardinality.to_sym)
+              raise ArgumentError, "Invalid cardinality #{cardinality}. Valid options are #{VALID_CARDINALITY.join(', ')}."
+            end
+
+            "#{@origin_fields}|card:#{cardinality}"
+          end
         end
       end
     end

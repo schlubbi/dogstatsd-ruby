@@ -47,6 +47,14 @@ describe Datadog::Statsd::Serialization::FieldSerializer do
 
       expect { serializer.format(nil) }.to make_allocations(0)
     end
+
+    it 'allocates only the result when formatting cardinality on Ruby 3+' do
+      skip 'Ruby too old' if RUBY_VERSION < '3'
+      serializer = described_class.new('container-id', 'external-data')
+      serializer.format(:low)
+
+      expect { serializer.format(:low) }.to make_allocations(1)
+    end
   end
 
   context 'benchmark' do
