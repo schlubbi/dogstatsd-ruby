@@ -25,6 +25,10 @@ module Datadog
             return @global_tags_formatted
           end
 
+          if @global_tags_formatted && Array === message_tags
+            return format_array_with_globals(message_tags)
+          end
+
           tags = if @global_tags_formatted
                    [@global_tags_formatted, to_tags_list(message_tags)]
                  else
@@ -37,6 +41,12 @@ module Datadog
         attr_reader :global_tags
 
         private
+
+        def format_array_with_globals(tags)
+          output = @global_tags_formatted.dup
+          tags.each { |tag| output << ',' << escape_tag_content(tag) }
+          output
+        end
 
         def to_tags_hash(tags)
           case tags

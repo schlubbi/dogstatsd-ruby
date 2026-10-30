@@ -163,6 +163,54 @@ describe Datadog::Statsd::Serialization::TagSerializer do
         expect(output).to eq 'namefoobar'
         expect(input).to eq 'name|foobar'
       end
+
+      it 'preserves separators around empty array entries' do
+        expect(subject.format(['', nil, 'last:value', ''])).to eq ',,last:value,'
+      end
+
+      it 'formats changed array entries on subsequent calls' do
+        tags = ['name:first']
+        expect(subject.format(tags)).to eq 'name:first'
+
+        tags.first.replace('name:second')
+        tags << 'other:value'
+
+        expect(subject.format(tags)).to eq 'name:second,other:value'
+      end
+
+      context 'with global tags' do
+        let(:global_tags) { ['service:example'] }
+
+        it 'preserves empty array entries after global tags' do
+          expect(subject.format(['', 'last:value'])).to eq 'service:example,,last:value'
+        end
+
+        it 'does not share mutable results with inputs or later calls' do
+          tags = ['name:value'.freeze].freeze
+          subject.format(tags).replace('changed')
+
+          expect(subject.format(tags)).to eq 'service:example,name:value'
+          expect(subject.format([])).to eq 'service:example'
+        end
+
+        it 'preserves UTF-8 array tags' do
+          tag = "name:\u00e9"
+          expect(subject.format([tag])).to eq "service:example,#{tag}"
+        end
+
+        it 'preserves global tag encoding with ASCII array tags' do
+          expect(subject.format(['name:value']).encoding).to eq subject.format([]).encoding
+        end
+
+        it 'only allocates the result when formatting string array tags' do
+          skip 'Ruby too old' if RUBY_VERSION < '2.3.0'
+          serializer = subject
+          tags = ['name:value']
+          serializer.format(tags)
+
+          expect { serializer.format(tags) }.to make_allocations(1)
+        end
+      end
     end
 
     context '[testing management of env vars]' do
