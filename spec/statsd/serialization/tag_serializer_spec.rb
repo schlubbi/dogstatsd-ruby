@@ -198,6 +198,10 @@ describe Datadog::Statsd::Serialization::TagSerializer do
           expect(subject.format([tag])).to eq "service:example,#{tag}"
         end
 
+        it 'preserves global tag encoding with ASCII array tags' do
+          expect(subject.format(['name:value']).encoding).to eq subject.format([]).encoding
+        end
+
         it 'only allocates the result when formatting string array tags' do
           skip 'Ruby too old' if RUBY_VERSION < '2.3.0'
           serializer = subject
