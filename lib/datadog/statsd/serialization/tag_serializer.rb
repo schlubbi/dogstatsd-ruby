@@ -25,6 +25,19 @@ module Datadog
             return @global_tags_formatted
           end
 
+          if @global_tags_formatted && Array === message_tags
+            tags = String.new
+            tags << @global_tags_formatted
+            index = 0
+
+            while index < message_tags.length
+              tags << ',' << escape_tag_content(message_tags[index])
+              index += 1
+            end
+
+            return tags
+          end
+
           tags = if @global_tags_formatted
                    [@global_tags_formatted, to_tags_list(message_tags)]
                  else
